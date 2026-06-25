@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sign In' if mode=='login' else 'Create Account' }} – QuizMaster Pro{% endblock %}
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div style="text-align:center; margin-bottom:28px;">
+            <span style="font-size:48px;">{{ '🔑' if mode=='login' else '🧠' }}</span>
+        </div>
+        <h1 class="auth-title" data-i18n="{{ 'auth_welcome_back' if mode=='login' else 'auth_join' }}">
+            {{ 'Welcome Back' if mode=='login' else 'Join QuizMaster' }}
+        </h1>
+        <p class="auth-sub" data-i18n="{{ 'auth_signin_sub' if mode=='login' else 'auth_register_sub' }}">
+            {{ 'Sign in to continue your quiz journey.' if mode=='login' else 'Create your free account and start playing!' }}
+        </p>
+
+        <form method="POST">
+            {% if mode == 'register' %}
+            <div class="form-group">
+                <label class="form-label" data-i18n="label_username">Username</label>
+                <input class="form-input" type="text" name="username" placeholder="e.g. quiz_master" required autofocus>
+            </div>
+            <div class="form-group">
+                <label class="form-label" data-i18n="label_email">Email</label>
+                <input class="form-input" type="email" name="email" placeholder="your@email.com" required>
+            </div>
+            {% else %}
+            <div class="form-group">
+                <label class="form-label" data-i18n="label_username">Username</label>
+                <input class="form-input" type="text" name="username" placeholder="Your username" required autofocus>
+            </div>
+            {% endif %}
+            <div class="form-group">
+                <label class="form-label" data-i18n="label_password">Password</label>
+                <input class="form-input" type="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top:8px;" data-i18n="{{ 'btn_signin' if mode=='login' else 'btn_create_account' }}">
+                {{ '🚀 Sign In' if mode=='login' else '✨ Create Account' }}
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            {% if mode == 'login' %}
+                <span data-i18n="auth_no_account">Don't have an account?</span> <a href="{{ url_for('register') }}" data-i18n="auth_signup_free">Sign up free</a>
+            {% else %}
+                <span data-i18n="auth_have_account">Already have an account?</span> <a href="{{ url_for('login') }}" data-i18n="nav_login">Sign in</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

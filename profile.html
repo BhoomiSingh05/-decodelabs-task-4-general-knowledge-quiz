@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block page_class %}page-profile{% endblock %}
+{% block content %}
+<div class="profile-wrap">
+
+    <!-- Header -->
+    <div class="profile-header">
+        <div class="profile-avatar-lg" style="background:{{ user['avatar_color'] }}">
+            {{ user['username'][0].upper() }}
+        </div>
+        <div>
+            <h1 class="profile-name">{{ user['username'] }}</h1>
+            <p class="profile-email">{{ user['email'] }}</p>
+            <p class="profile-joined">🗓️ Member since {{ user['created_at'][:10] }}</p>
+            <div style="display:flex; gap:8px; margin-top:10px;">
+                <span class="badge-pill pill-pass">🏆 {{ user['highest_score'] }} pts best</span>
+                <span class="badge-pill" style="background:var(--accent-light); color:var(--accent);">
+                    📝 {{ user['total_quizzes'] }} quizzes
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Badges -->
+    {% if badges %}
+    <div style="margin-bottom:32px;">
+        <div class="section-title">🏅 Achievement Badges</div>
+        <div class="badges-row" style="justify-content:flex-start;">
+            {% for b in badges %}
+            <span class="badge-chip" style="animation-delay:{{ loop.index * 0.1 }}s">{{ b }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="profile-grid">
+        <!-- Edit Profile -->
+        <div class="profile-card">
+            <div class="profile-card-title">⚙️ Edit Preferences</div>
+            <form method="POST" action="{{ url_for('update_profile') }}">
+                <label class="form-label">Favourite Category</label>
+                <select class="form-select" name="fav_category">
+                    {% for cat in ['Science','Technology','History','Sports','Geography','Math','Music'] %}
+                    <option value="{{ cat }}" {{ 'selected' if user['fav_category']==cat }}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+
+                <label class="form-label">Avatar Color</label>
+                <div class="color-options">
+                    {% for color in ['#6C63FF','#FF6B6B','#4ECDC4','#45B7D1','#FF6B9D','#00C9A7','#FFD166','#B57BFF'] %}
+                    <div class="color-dot {{ 'selected' if user['avatar_color']==color }}"
+                         style="background:{{ color }}"
+                         onclick="pickColor(this,'{{ color }}')"></div>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="avatar_color" id="colorInput" value="{{ user['avatar_color'] }}">
+
+                <button type="submit" class="btn btn-primary btn-sm btn-block">Save Changes</button>
+            </form>
+        </div>
+
+        <!-- Stats summary -->
+        <div class="profile-card">
+            <div class="profile-card-title">📊 Your Stats</div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                {% set total_qs = history | length %}
+                {% set passed_qs = history | selectattr('passed', 'equalto', 1) | list | length %}
+                {% set avg_pct = (history | map(attribute='percentage') | list | sum / history|length)|round(1) if history|length > 0 else 0 %}
+
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-radius:10px; background:var(--accent-light);">
+                    <span style="font-size:14px; color:var(--text-secondary);">Total Quizzes</span>
+                    <strong style="color:var(--accent); font-family:'Space Grotesk',sans-serif;">{{ total_qs }}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-radius:10px; background:rgba(0,201,167,0.1);">
+                    <span style="font-size:14px; color:var(--text-secondary);">Passed</span>
+                    <strong style="color:var(--success);">{{ passed_qs }}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-radius:10px; background:var(--accent-light);">
+                    <span style="font-size:14px; color:var(--text-secondary);">Average Score</span>
+                    <strong style="color:var(--accent); font-family:'Space Grotesk',sans-serif;">{{ avg_pct }}%</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-radius:10px; background:rgba(255,209,102,0.12);">
+                    <span style="font-size:14px; color:var(--text-secondary);">Favourite Category</span>
+                    <strong style="color:var(--warning);">{{ user['fav_category'] }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History -->
+    <div style="margin-top:32px;">
+        <div class="section-title">📋 Quiz History</div>
+        <div class="dash-card" style="background:var(--bg-glass); backdrop-filter:blur(16px); border:1px solid var(--border-glass); border-radius:var(--radius-lg); padding:24px;">
+            {% if history %}
+            <div style="overflow-x:auto;">
+                <table class="history-table">
+                    <thead><tr>
+                        <th>Category</th><th>Difficulty</th><th>Score</th><th>%</th><th>Result</th><th>Time</th><th>Date</th>
+                    </tr></thead>
+                    <tbody>
+                        {% for h in history %}
+                        <tr>
+                            <td>{{ h['category'] }}</td>
+                            <td><span class="badge-pill pill-{{ h['difficulty']|lower }}">{{ h['difficulty'] }}</span></td>
+                            <td><strong style="color:var(--accent)">{{ h['score'] }}/{{ h['total'] }}</strong></td>
+                            <td>{{ h['percentage']|round(0)|int }}%</td>
+                            <td><span class="badge-pill {{ 'pill-pass' if h['passed'] else 'pill-fail' }}">{{ '✅ Pass' if h['passed'] else '❌ Fail' }}</span></td>
+                            <td style="color:var(--text-muted)">{{ h['time_taken'] }}s</td>
+                            <td style="color:var(--text-muted); font-size:12px;">{{ h['played_at'][:10] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                <p>No quiz history yet. <a href="{{ url_for('quiz_setup') }}" style="color:var(--accent)">Start playing!</a></p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display:flex; gap:12px; justify-content:center; margin-top:32px; flex-wrap:wrap;">
+        <a href="{{ url_for('quiz_setup') }}" class="btn btn-primary">🎮 Play Quiz</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">📊 Dashboard</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function pickColor(el, color) {
+    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('colorInput').value = color;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" class="{% block page_class %}{% endblock %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}QuizMaster Pro{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="bg-canvas" aria-hidden="true">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="particles" id="particles"></div>
+    </div>
+
+    <nav class="navbar" role="navigation">
+        <div class="nav-inner">
+            <a href="{{ url_for('index') }}" class="nav-logo">
+                <span class="logo-icon">🧠</span>
+                <span class="logo-text">QuizMaster<span class="logo-accent">Pro</span></span>
+            </a>
+            <div class="nav-links">
+                {% if session.get('user_id') %}
+                    <a href="{{ url_for('dashboard') }}" class="nav-link" data-i18n="nav_dashboard">Dashboard</a>
+                    <a href="{{ url_for('quiz_setup') }}" class="nav-link" data-i18n="nav_play">Play</a>
+                    <a href="{{ url_for('daily_quiz') }}" class="nav-link nav-daily" data-i18n="nav_daily">⚡ Daily</a>
+                    <a href="{{ url_for('leaderboard') }}" class="nav-link" data-i18n="nav_leaderboard">Leaderboard</a>
+                    <a href="{{ url_for('profile') }}" class="nav-link" data-i18n="nav_profile">Profile</a>
+                    <a href="{{ url_for('logout') }}" class="nav-link nav-logout" data-i18n="nav_logout">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('leaderboard') }}" class="nav-link" data-i18n="nav_leaderboard">Leaderboard</a>
+                    <a href="{{ url_for('login') }}" class="nav-link" data-i18n="nav_login">Login</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm" data-i18n="nav_signup">Sign Up</a>
+                {% endif %}
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                <div class="lang-switcher">
+                    <select id="langSelect" onchange="switchLang(this.value)">
+                        <option value="en">🇬🇧 EN</option>
+                        <option value="hi">🇮🇳 HI</option>
+                        <option value="mr">🇮🇳 MR</option>
+                        <option value="es">🇪🇸 ES</option>
+                        <option value="fr">🇫🇷 FR</option>
+                        <option value="de">🇩🇪 DE</option>
+                        <option value="ar">🇸🇦 AR</option>
+                        <option value="zh">🇨🇳 ZH</option>
+                        <option value="ja">🇯🇵 JA</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+        {% for cat, msg in messages %}
+        <div class="flash flash-{{ cat }}">
+            <span>{{ '✅' if cat=='success' else '❌' }} {{ msg }}</span>
+            <button onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>© 2025 QuizMaster Pro · Built with 💜 · 
+            <a href="{{ url_for('leaderboard') }}" data-i18n="nav_leaderboard">Leaderboard</a> · 
+            <a href="{{ url_for('daily_quiz') if session.get('user_id') else url_for('login') }}" data-i18n="nav_daily">Daily Quiz</a>
+        </p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block page_class %}page-dashboard{% endblock %}
+{% block content %}
+
+<div class="dashboard-header">
+    <div class="welcome-row">
+        <div class="avatar-circle" style="background:{{ user['avatar_color'] }}">
+            {{ user['username'][0].upper() }}
+        </div>
+        <div class="welcome-text">
+            <h1 data-i18n-template="dash_hello" data-i18n-val="{{ user['username'] }}">Hey, {{ user['username'] }}! 👋</h1>
+            <p><span data-i18n="dash_best_score">Your highest score is</span> <strong style="color:var(--accent)">{{ user['highest_score'] }}</strong> pts.</p>
+        </div>
+        <div style="margin-left:auto; display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="{{ url_for('quiz_setup') }}" class="btn btn-primary" data-i18n="btn_play_quiz">🎮 Play Quiz</a>
+            <a href="{{ url_for('daily_quiz') }}" class="btn btn-secondary" data-i18n="nav_daily">⚡ Daily</a>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 0 24px 24px; max-width:1100px; margin:0 auto;">
+    <div class="metrics-row">
+        <div class="metric">
+            <div class="metric-val" data-count="{{ user['highest_score'] }}">{{ user['highest_score'] }}</div>
+            <div class="metric-label" data-i18n="metric_highest">HIGHEST SCORE</div>
+        </div>
+        <div class="metric">
+            <div class="metric-val" data-count="{{ user['total_quizzes'] }}">{{ user['total_quizzes'] }}</div>
+            <div class="metric-label" data-i18n="metric_played">QUIZZES PLAYED</div>
+        </div>
+        <div class="metric">
+            {% set avg = (history | map(attribute='percentage') | list | sum / history|length)|round(0)|int if history|length > 0 else 0 %}
+            <div class="metric-val" data-count="{{ avg }}">{{ avg }}</div>
+            <div class="metric-label" data-i18n="metric_avg">AVG SCORE %</div>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div>
+        <div class="dash-card" style="margin-bottom:24px;">
+            <div class="dash-card-title" data-i18n="quick_play">⚡ Quick Play</div>
+            <div class="category-grid" id="quickCats">
+                {% for cat, emoji in [('Science','🔬'),('Technology','💻'),('History','🏛️'),('Sports','⚽'),('Geography','🌍'),('Math','📐'),('Music','🎵')] %}
+                <button class="cat-btn" onclick="quickStart('{{ cat }}', 'Easy')">
+                    <span class="cat-emoji">{{ emoji }}</span>
+                    <span data-i18n="cat_{{ cat|lower }}">{{ cat }}</span>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="dash-card">
+            <div class="dash-card-title" data-i18n="recent_history">📋 Recent History</div>
+            {% if history %}
+            <div style="overflow-x:auto;">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_category">Category</th>
+                            <th data-i18n="th_difficulty">Difficulty</th>
+                            <th data-i18n="th_score">Score</th>
+                            <th>%</th>
+                            <th data-i18n="th_result">Result</th>
+                            <th data-i18n="th_date">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for h in history %}
+                        <tr>
+                            <td data-i18n="cat_{{ h['category']|lower }}">{{ h['category'] }}</td>
+                            <td><span class="badge-pill pill-{{ h['difficulty']|lower }}" data-i18n="diff_{{ h['difficulty']|lower }}">{{ h['difficulty'] }}</span></td>
+                            <td><strong style="color:var(--accent)">{{ h['score'] }}</strong>/{{ h['total'] }}</td>
+                            <td>{{ h['percentage']|round(0)|int }}%</td>
+                            <td>
+                                <span class="badge-pill {{ 'pill-pass' if h['passed'] else 'pill-fail' }}" data-i18n="{{ 'result_pass' if h['passed'] else 'result_fail' }}">
+                                    {{ '✅ Pass' if h['passed'] else '❌ Fail' }}
+                                </span>
+                            </td>
+                            <td style="color:var(--text-muted); font-size:12px;">{{ h['played_at'][:10] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                <div style="font-size:48px; margin-bottom:12px;">🎯</div>
+                <p data-i18n="no_quizzes">No quizzes yet! Play your first quiz.</p>
+                <a href="{{ url_for('quiz_setup') }}" class="btn btn-primary btn-sm" style="margin-top:16px;" data-i18n="btn_start_playing">Start Playing</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div>
+        {% set badges = user['badges']|from_json if user['badges'] else [] %}
+        {% if badges %}
+        <div class="dash-card" style="margin-bottom:24px;">
+            <div class="dash-card-title" data-i18n="your_badges">🏅 Your Badges</div>
+            <div class="badges-row" style="justify-content:flex-start;">
+                {% for b in badges %}
+                <span class="badge-chip" style="animation-delay:{{ loop.index * 0.1 }}s">{{ b }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="dash-card">
+            <div class="dash-card-title" data-i18n="top_players">🏆 Top Players</div>
+            <div class="leader-list">
+                {% for l in leaderboard %}
+                <div class="leader-item">
+                    <div class="leader-rank {{ 'top-1' if loop.index==1 else 'top-2' if loop.index==2 else 'top-3' if loop.index==3 else '' }}">
+                        {{ '🥇' if loop.index==1 else '🥈' if loop.index==2 else '🥉' if loop.index==3 else loop.index }}
+                    </div>
+                    <div class="leader-avatar" style="background:{{ l['avatar_color'] }}">
+                        {{ l['username'][0].upper() }}
+                    </div>
+                    <span class="leader-name">{{ l['username'] }}</span>
+                    <span class="leader-score">{{ l['highest_score'] }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <a href="{{ url_for('leaderboard') }}" class="btn btn-secondary btn-sm btn-block" style="margin-top:20px;" data-i18n="view_leaderboard">
+                View Full Leaderboard →
+            </a>
+        </div>
+    </div>
+</div>
+
+<form id="quickForm" method="POST" action="{{ url_for('start_quiz') }}" style="display:none;">
+    <input type="hidden" name="category" id="qf_cat">
+    <input type="hidden" name="difficulty" id="qf_diff">
+    <input type="hidden" name="language" value="en" id="qf_lang">
+</form>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+function quickStart(cat, diff) {
+    document.getElementById('qf_cat').value = cat;
+    document.getElementById('qf_diff').value = diff;
+    document.getElementById('qf_lang').value = localStorage.getItem('qm-lang') || 'en';
+    document.getElementById('quickForm').submit();
+}
+</script>
+{% endblock %}

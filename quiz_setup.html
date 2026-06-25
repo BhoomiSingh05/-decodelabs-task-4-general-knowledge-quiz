@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Setup Quiz – QuizMaster Pro{% endblock %}
+{% block content %}
+<div class="setup-wrap">
+    <h1 class="setup-title" data-i18n="setup_title">🎮 Setup Your Quiz</h1>
+    <p class="setup-sub" data-i18n="setup_sub">Choose your category, difficulty, and language</p>
+
+    <div class="setup-card">
+        <form method="POST" action="{{ url_for('start_quiz') }}" id="quizForm">
+            <div class="setup-section">
+                <div class="setup-section-label" data-i18n="label_category">📚 Category</div>
+                <div class="category-grid">
+                    {% set cat_emojis = {'Science':'🔬','Technology':'💻','History':'🏛️','Sports':'⚽','Geography':'🌍','Math':'📐','Music':'🎵'} %}
+                    {% for cat in categories %}
+                    <button type="button" class="cat-btn {{ 'active' if loop.first }}"
+                            data-cat="{{ cat }}"
+                            onclick="selectCat(this, '{{ cat }}')">
+                        <span class="cat-emoji">{{ cat_emojis.get(cat, '❓') }}</span>
+                        <span data-i18n="cat_{{ cat|lower }}">{{ cat }}</span>
+                    </button>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="category" id="cat_input" value="{{ categories[0] if categories }}">
+            </div>
+
+            <div class="setup-section">
+                <div class="setup-section-label" data-i18n="label_difficulty">⚡ Difficulty</div>
+                <div class="diff-row">
+                    <button type="button" class="diff-btn active-easy" data-diff="Easy" onclick="selectDiff(this,'Easy')" data-i18n="diff_easy">🟢 Easy</button>
+                    <button type="button" class="diff-btn" data-diff="Medium" onclick="selectDiff(this,'Medium')" data-i18n="diff_medium">🟡 Medium</button>
+                    <button type="button" class="diff-btn" data-diff="Hard" onclick="selectDiff(this,'Hard')" data-i18n="diff_hard">🔴 Hard</button>
+                </div>
+                <input type="hidden" name="difficulty" id="diff_input" value="Easy">
+            </div>
+
+            <div class="setup-section">
+                <div class="setup-section-label" data-i18n="label_language">🌍 Language</div>
+                <div class="lang-row">
+                    {% for code, label in [('en','🇬🇧 English'),('hi','🇮🇳 Hindi'),('mr','🇮🇳 Marathi'),('es','🇪🇸 Spanish'),('fr','🇫🇷 French'),('de','🇩🇪 German'),('ar','🇸🇦 Arabic'),('zh','🇨🇳 Chinese'),('ja','🇯🇵 Japanese')] %}
+                    <button type="button" class="lang-opt {{ 'active' if code=='en' }}" id="langopt_{{ code }}"
+                            onclick="selectLang(this,'{{ code }}')">
+                        {{ label }}
+                    </button>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="language" id="lang_input" value="en">
+                <p style="font-size:12px; color:var(--text-muted); margin-top:10px;" data-i18n="lang_note">
+                    * Questions will be translated to your chosen language in real time.
+                </p>
+            </div>
+
+            <div style="background:var(--accent-light); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:24px; display:flex; gap:16px; flex-wrap:wrap;">
+                <div style="font-size:13px; color:var(--text-secondary);" data-i18n="quiz_info">
+                    📝 10 Questions · ⏱️ 30s each · 🎯 10 pts per correct · ✅ Pass: 60%
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg" id="startBtn" data-i18n="btn_start_quiz">
+                🚀 Start Quiz
+            </button>
+        </form>
+    </div>
+
+    <div style="text-align:center; margin-top:20px;">
+        <a href="{{ url_for('daily_quiz') }}" class="btn btn-secondary" data-i18n="btn_daily_instead">
+            ⚡ Play Daily Challenge Instead
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Pre-select language from localStorage
+(function() {
+    const lang = localStorage.getItem('qm-lang') || 'en';
+    document.getElementById('lang_input').value = lang;
+    document.querySelectorAll('.lang-opt').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('langopt_' + lang);
+    if (btn) btn.classList.add('active');
+})();
+
+function selectCat(btn, cat) {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('cat_input').value = cat;
+}
+function selectDiff(btn, diff) {
+    document.querySelectorAll('.diff-btn').forEach(b => b.className = 'diff-btn');
+    btn.classList.add('active-' + diff.toLowerCase());
+    document.getElementById('diff_input').value = diff;
+}
+function selectLang(btn, code) {
+    document.querySelectorAll('.lang-opt').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('lang_input').value = code;
+    switchLang(code);
+}
+document.getElementById('quizForm').addEventListener('submit', () => {
+    document.getElementById('startBtn').textContent = '⏳ Loading...';
+    document.getElementById('startBtn').disabled = true;
+});
+</script>
+{% endblock %}

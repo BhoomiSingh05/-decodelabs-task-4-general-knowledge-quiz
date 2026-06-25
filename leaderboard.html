@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block page_class %}page-leaderboard{% endblock %}
+{% block content %}
+<div class="lb-wrap">
+    <h1 class="lb-title" data-i18n="lb_title">🏆 Leaderboard</h1>
+    <p class="lb-sub" data-i18n="lb_sub">Top players competing for quiz supremacy</p>
+
+    {% if leaders|length >= 3 %}
+    <div class="lb-podium">
+        <div class="podium-item">
+            <div class="crown">🥈</div>
+            <div class="podium-avatar" style="background:{{ leaders[1]['avatar_color'] }}">{{ leaders[1]['username'][0].upper() }}</div>
+            <div class="podium-name">{{ leaders[1]['username'] }}</div>
+            <div class="podium-score">{{ leaders[1]['highest_score'] }}</div>
+            <div class="podium-plinth plinth-2"></div>
+        </div>
+        <div class="podium-item">
+            <div class="crown">👑</div>
+            <div class="podium-avatar" style="background:{{ leaders[0]['avatar_color'] }}; width:72px; height:72px; font-size:24px; box-shadow:0 0 30px rgba(255,215,0,0.5);">{{ leaders[0]['username'][0].upper() }}</div>
+            <div class="podium-name" style="font-weight:700;">{{ leaders[0]['username'] }}</div>
+            <div class="podium-score" style="font-size:20px;">{{ leaders[0]['highest_score'] }}</div>
+            <div class="podium-plinth plinth-1"></div>
+        </div>
+        <div class="podium-item">
+            <div class="crown">🥉</div>
+            <div class="podium-avatar" style="background:{{ leaders[2]['avatar_color'] }}">{{ leaders[2]['username'][0].upper() }}</div>
+            <div class="podium-name">{{ leaders[2]['username'] }}</div>
+            <div class="podium-score">{{ leaders[2]['highest_score'] }}</div>
+            <div class="podium-plinth plinth-3"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="lb-table">
+        {% for l in leaders %}
+        <div class="lb-row" style="animation:fade-up 0.4s {{ loop.index * 0.05 }}s ease both;">
+            <div class="lb-pos">
+                {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+            </div>
+            <div class="lb-user">
+                <div class="leader-avatar" style="background:{{ l['avatar_color'] }}">{{ l['username'][0].upper() }}</div>
+                <div>
+                    <div class="lb-username">{{ l['username'] }}
+                        {% set badges = l['badges']|from_json if l['badges'] else [] %}
+                        {% for b in badges[:2] %}<span style="font-size:14px; margin-left:4px;">{{ b.split()[0] }}</span>{% endfor %}
+                    </div>
+                    <div class="lb-quizzes">{{ l['total_quizzes'] }} <span data-i18n="quizzes_played">quizzes played</span></div>
+                </div>
+            </div>
+            <div class="lb-score">{{ l['highest_score'] }} pts</div>
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:60px; color:var(--text-muted);">
+            <div style="font-size:48px; margin-bottom:12px;">🎯</div>
+            <p data-i18n="no_players">No players yet. Be the first!</p>
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm" style="margin-top:16px;" data-i18n="btn_join_now">Join Now</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="text-align:center; margin-top:32px;">
+        {% if session.get('user_id') %}
+            <a href="{{ url_for('quiz_setup') }}" class="btn btn-primary" data-i18n="btn_improve_rank">🎮 Improve Your Rank</a>
+        {% else %}
+            <a href="{{ url_for('register') }}" class="btn btn-primary" data-i18n="btn_join_compete">Join & Compete →</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

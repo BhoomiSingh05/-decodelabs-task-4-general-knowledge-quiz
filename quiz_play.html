@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block page_class %}page-quiz{% endblock %}
+{% block content %}
+<div class="quiz-arena">
+
+    <div class="quiz-meta">
+        <div class="quiz-meta-left">
+            <span class="q-counter" data-i18n="lbl_question">Question</span>
+            <strong class="q-counter">{{ current }}/{{ total }}</strong>
+            <span class="q-category" data-i18n="cat_{{ category|lower }}">{{ category }}</span>
+            <span class="badge-pill pill-{{ difficulty|lower }}" data-i18n="diff_{{ difficulty|lower }}">{{ difficulty }}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+            <span class="score-live">🏆 <span id="liveScore">{{ score }}</span> <span data-i18n="lbl_pts">pts</span></span>
+            <div class="timer-ring">
+                <svg class="timer-svg" width="70" height="70" viewBox="0 0 70 70">
+                    <circle class="timer-bg" cx="35" cy="35" r="30"/>
+                    <circle class="timer-arc" cx="35" cy="35" r="30"
+                            stroke-dasharray="188.5" stroke-dashoffset="0" id="timerArc"/>
+                </svg>
+                <div class="timer-num" id="timerNum">30</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="quiz-progress">
+        <div class="progress-track">
+            <div class="progress-fill" style="width:{{ ((current-1)/total*100)|round(1) }}%"></div>
+        </div>
+    </div>
+
+    <div class="question-card">
+        <p class="q-text" id="qText">{{ question.question }}</p>
+
+        <div class="options-grid" id="optionsGrid">
+            {% for key, val in question.options.items() %}
+            <button class="option-btn" id="opt_{{ key }}"
+                    onclick="submitAnswer('{{ key }}')" data-key="{{ key }}">
+                <span class="option-key">{{ key }}</span>
+                <span id="opt_text_{{ key }}">{{ val }}</span>
+            </button>
+            {% endfor %}
+        </div>
+
+        <div class="hint-box" id="hintBox">
+            💡 <strong data-i18n="lbl_hint">Hint:</strong> <span id="hintText">{{ question.hint or 'Think carefully!' }}</span>
+        </div>
+
+        <div class="feedback-banner" id="feedbackBanner"></div>
+
+        <div class="quiz-actions" style="margin-top:20px;">
+            <button class="btn btn-secondary btn-sm" onclick="showHint()" data-i18n="btn_hint">💡 Hint</button>
+            <button class="btn btn-secondary btn-sm" onclick="skipQuestion()" id="skipBtn" data-i18n="btn_skip">Skip</button>
+            <button class="btn btn-primary" id="nextBtn" onclick="goNext()" style="display:none;" data-i18n="btn_next">
+                Next Question →
+            </button>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const TOTAL_TIME = 30;
+const CORRECT_KEY = "{{ question.correct }}";
+const QUIZ_LANG   = "{{ language }}";
+let timeLeft = TOTAL_TIME;
+let timerInterval = null;
+let answered = false;
+
+const arc    = document.getElementById('timerArc');
+const numEl  = document.getElementById('timerNum');
+const circumference = 2 * Math.PI * 30;
+
+/* ── TRANSLATION ──────────────────────────────────────── */
+async function translateAndStart() {
+    if (QUIZ_LANG === 'en') { startTimer(); return; }
+
+    document.getElementById('qText').style.opacity = '0.35';
+
+    const payload = {
+        lang: QUIZ_LANG,
+        content: {
+            question: document.getElementById('qText').textContent.trim(),
+            A: document.getElementById('opt_text_A')?.textContent.trim(),
+            B: document.getElementById('opt_text_B')?.textContent.trim(),
+            C: document.getElementById('opt_text_C')?.textContent.trim(),
+            D: document.getElementById('opt_text_D')?.textContent.trim(),
+            hint: document.getElementById('hintText')?.textContent.trim()
+        }
+    };
+
+    try {
+        const res = await fetch('/api/translate', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const t = await res.json();
+        if (t.question) document.getElementById('qText').textContent = t.question;
+        ['A','B','C','D'].forEach(k => {
+            const el = document.getElementById('opt_text_' + k);
+            if (el && t[k]) el.textContent = t[k];
+        });
+        if (t.hint) document.getElementById('hintText').textContent = t.hint;
+    } catch(e) { /* fallback to English */ }
+
+    document.getElementById('qText').style.opacity = '1';
+    startTimer();
+}
+
+function startTimer() {
+    timerInterval = setInterval(updateTimer, 1000);
+    updateTimer();
+}
+
+translateAndStart();
+
+/* ── TIMER ──────────────────────────────────────────────── */
+function updateTimer() {
+    const frac = timeLeft / TOTAL_TIME;
+    arc.style.strokeDashoffset = circumference * (1 - frac);
+    numEl.textContent = timeLeft;
+    if (timeLeft <= 10) {
+        arc.style.stroke = '#FF6B6B'; numEl.style.color = '#FF6B6B';
+    } else if (timeLeft <= 20) {
+        arc.style.stroke = '#FFD166'; numEl.style.color = '#FFD166';
+    }
+    if (timeLeft <= 0) { clearInterval(timerInterval); if (!answered) timeUp(); }
+    timeLeft--;
+}
+
+function timeUp() {
+    answered = true;
+    disableOptions();
+    const T = window.__T || {};
+    showFeedback(false, (T.timeup || "⏰ Time's up!") + ' ' + (T.correct_was || 'Correct answer:') + ' ' + CORRECT_KEY, "{{ question.explanation }}");
+    highlightCorrect();
+    document.getElementById('nextBtn').style.display = 'inline-flex';
+    document.getElementById('skipBtn').style.display = 'none';
+    sendAnswer('');
+}
+
+function submitAnswer(key) {
+    if (answered) return;
+    answered = true;
+    clearInterval(timerInterval);
+    disableOptions();
+    sendAnswer(key);
+}
+
+async function sendAnswer(key) {
+    const res = await fetch('/quiz/answer', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({answer: key})
+    });
+    const data = await res.json();
+    const T = window.__T || {};
+
+    const btn = document.getElementById('opt_' + key);
+    const correctBtn = document.getElementById('opt_' + data.correct);
+
+    if (data.is_correct) {
+        if (btn) btn.classList.add('correct');
+        showFeedback(true, (T.correct || '✅ Correct!') + ' +10 pts', data.explanation);
+    } else {
+        if (btn) btn.classList.add('wrong');
+        if (correctBtn) correctBtn.classList.add('correct');
+        showFeedback(false, (T.wrong || '❌ Wrong!') + ' ' + (T.correct_was || 'Correct:') + ' ' + data.correct, data.explanation);
+    }
+
+    document.getElementById('liveScore').textContent = data.score;
+    const nextBtn = document.getElementById('nextBtn');
+    nextBtn.style.display = 'inline-flex';
+    nextBtn.setAttribute('data-i18n', data.next ? 'btn_next' : 'btn_see_results');
+    nextBtn.textContent = data.next ? (T.btn_next || 'Next Question →') : (T.btn_see_results || '📊 See Results');
+    document.getElementById('skipBtn').style.display = 'none';
+}
+
+function disableOptions() { document.querySelectorAll('.option-btn').forEach(b => b.disabled = true); }
+function highlightCorrect() {
+    const cb = document.getElementById('opt_' + CORRECT_KEY);
+    if (cb) cb.classList.add('correct');
+}
+function showFeedback(correct, msg, explanation) {
+    const banner = document.getElementById('feedbackBanner');
+    banner.className = 'feedback-banner show ' + (correct ? 'feedback-correct' : 'feedback-wrong');
+    banner.innerHTML = `<div class="feedback-title">${msg}</div>${explanation ? '<div>' + explanation + '</div>' : ''}`;
+}
+function showHint() { document.getElementById('hintBox').classList.toggle('show'); }
+function skipQuestion() {
+    if (answered) return;
+    answered = true;
+    clearInterval(timerInterval);
+    disableOptions();
+    sendAnswer('');
+}
+function goNext() {
+    const T = window.__T || {};
+    document.getElementById('nextBtn').textContent = T.loading || '⏳ Loading...';
+    document.getElementById('nextBtn').disabled = true;
+    window.location.href = '/quiz/play';
+}
+document.addEventListener('keydown', e => {
+    if (!answered) {
+        const map = {a:'A',b:'B',c:'C',d:'D'};
+        const key = map[e.key.toLowerCase()];
+        if (key) submitAnswer(key);
+        if (e.key === 'h') showHint();
+        if (e.key === 's') skipQuestion();
+    } else {
+        if (e.key === 'Enter' || e.key === 'ArrowRight') goNext();
+    }
+});
+</script>
+{% endblock %}

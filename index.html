@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}QuizMaster Pro – Test Your Knowledge{% endblock %}
+{% block content %}
+
+<section class="hero">
+    <div class="hero-badge" data-i18n="hero_badge">🚀 The Ultimate Quiz Platform</div>
+    <h1 class="hero-title" data-i18n="hero_title">Challenge Your<br>Mind Daily</h1>
+    <p class="hero-sub" data-i18n="hero_sub">
+        Compete in Science, Technology, History, Sports & more.<br>
+        Track your progress, earn badges, and climb the leaderboard.
+    </p>
+    <div class="hero-actions">
+        {% if session.get('user_id') %}
+            <a href="{{ url_for('quiz_setup') }}" class="btn btn-primary btn-lg" data-i18n="btn_play_now">🎮 Play Now</a>
+            <a href="{{ url_for('daily_quiz') }}" class="btn btn-secondary btn-lg" data-i18n="btn_daily">⚡ Daily Challenge</a>
+        {% else %}
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg" data-i18n="btn_get_started">Get Started Free</a>
+            <a href="{{ url_for('login') }}" class="btn btn-secondary btn-lg" data-i18n="nav_login">Sign In</a>
+        {% endif %}
+    </div>
+</section>
+
+<div class="stats-strip">
+    <div class="stat-chip">
+        <div class="stat-num" data-count="50">0</div>
+        <div class="stat-label" data-i18n="stat_questions">QUESTIONS</div>
+    </div>
+    <div class="stat-chip">
+        <div class="stat-num" data-count="8">0</div>
+        <div class="stat-label" data-i18n="stat_categories">CATEGORIES</div>
+    </div>
+    <div class="stat-chip">
+        <div class="stat-num" data-count="3">0</div>
+        <div class="stat-label" data-i18n="stat_difficulty">DIFFICULTY LEVELS</div>
+    </div>
+    <div class="stat-chip">
+        <div class="stat-num" data-count="9">0</div>
+        <div class="stat-label" data-i18n="stat_languages">LANGUAGES</div>
+    </div>
+</div>
+
+<div class="features-grid">
+    <div class="feature-card" style="animation-delay:0.1s">
+        <div class="feature-icon">🎯</div>
+        <div class="feature-title" data-i18n="feat1_title">Multiple Categories</div>
+        <div class="feature-desc" data-i18n="feat1_desc">Science, Tech, History, Sports, Geography, Math, Music — pick your passion and master it.</div>
+    </div>
+    <div class="feature-card" style="animation-delay:0.15s">
+        <div class="feature-icon">⏱️</div>
+        <div class="feature-title" data-i18n="feat2_title">Timed Challenges</div>
+        <div class="feature-desc" data-i18n="feat2_desc">Race against the clock with 30-second timers. Think fast, score high.</div>
+    </div>
+    <div class="feature-card" style="animation-delay:0.2s">
+        <div class="feature-icon">🏆</div>
+        <div class="feature-title" data-i18n="feat3_title">Live Leaderboard</div>
+        <div class="feature-desc" data-i18n="feat3_desc">Compete globally. See where you rank against top players in real time.</div>
+    </div>
+    <div class="feature-card" style="animation-delay:0.25s">
+        <div class="feature-icon">🌍</div>
+        <div class="feature-title" data-i18n="feat4_title">9 Languages</div>
+        <div class="feature-desc" data-i18n="feat4_desc">Play in English, Hindi, Marathi, Spanish, French, German, Arabic, Chinese, or Japanese.</div>
+    </div>
+    <div class="feature-card" style="animation-delay:0.3s">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title" data-i18n="feat5_title">Daily Quiz</div>
+        <div class="feature-desc" data-i18n="feat5_desc">Fresh questions every day. Build a streak and earn exclusive daily-player badges.</div>
+    </div>
+    <div class="feature-card" style="animation-delay:0.35s">
+        <div class="feature-icon">🎖️</div>
+        <div class="feature-title" data-i18n="feat6_title">Achievement Badges</div>
+        <div class="feature-desc" data-i18n="feat6_desc">Earn badges for perfect scores, streaks, and veteran status. Flex your collection.</div>
+    </div>
+    <div class="feature-card" style="animation-delay:0.4s">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title" data-i18n="feat7_title">Score Analytics</div>
+        <div class="feature-desc" data-i18n="feat7_desc">Visual dashboards show your quiz history, improvement trends, and weak spots.</div>
+    </div>
+    <div class="feature-card" style="animation-delay:0.45s">
+        <div class="feature-icon">🔍</div>
+        <div class="feature-title" data-i18n="feat8_title">Answer Explanations</div>
+        <div class="feature-desc" data-i18n="feat8_desc">Learn from every mistake. Detailed explanations after each answer help you improve fast.</div>
+    </div>
+</div>
+
+<div style="text-align:center; padding: 0 24px 80px;">
+    <div class="glass-card" style="max-width:600px; margin:0 auto; padding:48px 40px;">
+        <h2 style="font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; margin-bottom:12px;" data-i18n="cta_title">
+            Ready to test yourself?
+        </h2>
+        <p style="color:var(--text-secondary); margin-bottom:28px;" data-i18n="cta_sub">
+            Join thousands of quiz enthusiasts. Free forever.
+        </p>
+        {% if session.get('user_id') %}
+            <a href="{{ url_for('quiz_setup') }}" class="btn btn-primary btn-lg" data-i18n="btn_start_now">Start Quiz Now →</a>
+        {% else %}
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg" data-i18n="btn_create_account">Create Free Account →</a>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

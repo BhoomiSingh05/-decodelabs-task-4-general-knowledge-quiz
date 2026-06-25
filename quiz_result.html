@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block page_class %}page-quiz{% endblock %}
+{% block content %}
+<div class="result-wrap">
+
+    <!-- Score Hero -->
+    <div class="result-hero">
+        <div class="result-score-circle" style="--pct:{{ percentage }}">
+            <div class="result-score-circle-inner">
+                <div class="result-pct" data-pct="{{ percentage }}">{{ percentage }}%</div>
+                <div class="result-label">SCORE</div>
+            </div>
+        </div>
+
+        <h1 class="result-perf">{{ performance[0] }}</h1>
+        <p class="result-sub">
+            You scored <strong style="color:var(--accent)">{{ score }}</strong> out of
+            <strong>{{ total }}</strong> points in <strong>{{ category }}</strong> · {{ difficulty }}
+        </p>
+
+        <div class="result-stats">
+            <div class="result-stat">
+                <div class="result-stat-val" style="color:var(--success)">{{ correct }}</div>
+                <div class="result-stat-label">✅ Correct</div>
+            </div>
+            <div class="result-stat">
+                <div class="result-stat-val" style="color:var(--danger)">{{ wrong }}</div>
+                <div class="result-stat-label">❌ Wrong</div>
+            </div>
+            <div class="result-stat">
+                <div class="result-stat-val" style="color:var(--warning)">{{ time_taken }}s</div>
+                <div class="result-stat-label">⏱️ Time</div>
+            </div>
+            <div class="result-stat">
+                <div class="result-stat-val" style="color:{{ 'var(--success)' if passed else 'var(--danger)' }}">
+                    {{ '✅ Pass' if passed else '❌ Fail' }}
+                </div>
+                <div class="result-stat-label">Status</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Badges earned -->
+    {% if badges %}
+    <div class="dash-card" style="margin-bottom:24px; background:var(--bg-glass); backdrop-filter:blur(16px); border:1px solid var(--border-glass); border-radius:var(--radius-lg); padding:24px;">
+        <div class="section-title">🏅 Your Badges</div>
+        <div class="badges-row">
+            {% for b in badges %}
+            <span class="badge-chip" style="animation-delay:{{ loop.index * 0.15 }}s">{{ b }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- CTA buttons -->
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:40px;">
+        <a href="{{ url_for('quiz_setup') }}" class="btn btn-primary">🔄 Play Again</a>
+        <a href="{{ url_for('daily_quiz') }}" class="btn btn-secondary">⚡ Daily Quiz</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">📊 Dashboard</a>
+        <a href="{{ url_for('leaderboard') }}" class="btn btn-secondary">🏆 Leaderboard</a>
+    </div>
+
+    <!-- Answer Review -->
+    <div class="section-title">📋 Answer Review</div>
+    <div class="review-list">
+        {% for a in answers %}
+        <div class="review-item" style="animation-delay:{{ loop.index * 0.06 }}s;
+             border-left:3px solid {{ 'var(--success)' if a.is_correct else 'var(--danger)' }};">
+            <div class="review-q">
+                {{ '✅' if a.is_correct else '❌' }} Q{{ loop.index }}. {{ a.question }}
+            </div>
+            <div class="review-answers">
+                {% if not a.is_correct %}
+                <span class="review-answer ra-wrong">Your answer: {{ a.selected or 'Skipped' }} – {{ a.options.get(a.selected, 'N/A') }}</span>
+                {% endif %}
+                <span class="review-answer ra-correct">Correct: {{ a.correct }} – {{ a.options[a.correct] }}</span>
+            </div>
+            {% if a.explanation %}
+            <div class="review-exp">📖 {{ a.explanation }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Performance message -->
+    <div style="text-align:center; margin-top:40px; padding:32px;
+         background:var(--bg-glass); backdrop-filter:blur(12px);
+         border:1px solid var(--border-glass); border-radius:var(--radius-lg);">
+        {% if performance[1] == 'perfect' %}
+            <div style="font-size:48px; margin-bottom:12px;">🌟</div>
+            <p style="font-size:16px; color:var(--text-secondary);">Perfect score! You're a true QuizMaster!</p>
+        {% elif performance[1] in ['excellent','good'] %}
+            <div style="font-size:48px; margin-bottom:12px;">⭐</div>
+            <p style="font-size:16px; color:var(--text-secondary);">Great performance! Keep it up!</p>
+        {% elif performance[1] == 'pass' %}
+            <div style="font-size:48px; margin-bottom:12px;">👍</div>
+            <p style="font-size:16px; color:var(--text-secondary);">You passed! A bit more practice and you'll excel.</p>
+        {% else %}
+            <div style="font-size:48px; margin-bottom:12px;">📚</div>
+            <p style="font-size:16px; color:var(--text-secondary);">Don't give up! Review the explanations and try again.</p>
+        {% endif %}
+        <a href="{{ url_for('quiz_setup') }}" class="btn btn-primary" style="margin-top:16px;">
+            Try Again →
+        </a>
+    </div>
+
+</div>
+{% endblock %}
